@@ -5,23 +5,11 @@ import { Todo } from '../types/Todo';
 type Props = {
   todo: Todo;
   onDeleteTodo: (todoId: number) => void;
-  // isCompleted: boolean;
-  // setCompletedTodosId: React.Dispatch<React.SetStateAction<number[]>>;
   isLoading: boolean;
 };
 
 export const TodoItem: React.FC<Props> = props => {
   const { todo, onDeleteTodo, isLoading } = props;
-
-  // const handleComplete = (event: React.ChangeEvent<HTMLInputElement>) => {
-  //   if (event.target.checked) {
-  //     setCompletedTodosId(prev => [...prev, todo.id]);
-  //   } else {
-  //     setCompletedTodosId(prevTodosId =>
-  //       prevTodosId.filter(todoId => todoId !== todo.id),
-  //     );
-  //   }
-  // };
 
   return (
     <div data-cy="Todo" className={cn('todo', { completed: todo.completed })}>
@@ -31,7 +19,6 @@ export const TodoItem: React.FC<Props> = props => {
           type="checkbox"
           className="todo__status"
           checked={todo.completed}
-          // onChange={event => handleComplete(event)}
         />
       </label>
 

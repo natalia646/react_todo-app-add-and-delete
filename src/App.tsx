@@ -9,11 +9,11 @@ import { ErrorMessage } from './types/ErrorMessage';
 import { Todo } from './types/Todo';
 
 import { TodoFooter } from './components/TodoFooter';
-import { TodoItem } from './components/TodoItem';
 import { ErrorNotification } from './components/ErrorNotification';
 import { TodoHeader } from './components/TodoHeader';
 import { Status } from './types/Status';
 import { getFilteredTodos } from './utils/getFilteredTodos';
+import { TodoList } from './components/TodoList';
 
 export const App: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<ErrorMessage>(
@@ -22,7 +22,7 @@ export const App: React.FC = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [activeStatus, setActiveStatus] = useState(Status.All);
   const [tempTodo, setTempTodo] = useState<Todo | null>(null);
-  const [isLoadingTodos, setIsLoadingTodos] = useState<number[]>([]);
+  const [loadingTodos, setLoadingTodos] = useState<number[]>([]);
 
   const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -30,7 +30,7 @@ export const App: React.FC = () => {
   const notCompletedTodos = todos.filter(todo => !todo.completed).length;
   const completedTodos = todos.filter(todo => todo.completed);
 
-  const onAddTodo = async (title: string) => {
+  const onAddTodo = (title: string) => {
     setTempTodo({
       id: 0,
       title,
@@ -44,20 +44,17 @@ export const App: React.FC = () => {
       completed: false,
     };
 
-    try {
-      const todo = await createTodos(newTodo);
-
-      setTodos(currentTodos => [...currentTodos, todo]);
-    } catch (error) {
-      setErrorMessage(ErrorMessage.UnableToAdd);
-      throw error;
-    } finally {
-      setTempTodo(null);
-    }
+    return createTodos(newTodo)
+      .then(todo => setTodos(currentTodos => [...currentTodos, todo]))
+      .catch(err => {
+        setErrorMessage(ErrorMessage.UnableToAdd);
+        throw err;
+      })
+      .finally(() => setTempTodo(null));
   };
 
   const onDeleteTodo = (todoId: number) => {
-    setIsLoadingTodos(prevTodos => [...prevTodos, todoId]);
+    setLoadingTodos(prevTodos => [...prevTodos, todoId]);
 
     deleteTodo(todoId)
       .then(() =>
@@ -65,12 +62,11 @@ export const App: React.FC = () => {
           currentTodos.filter(todo => todo.id !== todoId),
         ),
       )
-      .catch(error => {
+      .catch(() => {
         setErrorMessage(ErrorMessage.UnableToDelete);
-        throw error;
       })
       .finally(() =>
-        setIsLoadingTodos(prevTodos => prevTodos.filter(id => todoId !== id)),
+        setLoadingTodos(prevTodos => prevTodos.filter(id => todoId !== id)),
       );
   };
 
@@ -81,9 +77,8 @@ export const App: React.FC = () => {
   useEffect(() => {
     getTodos()
       .then(data => setTodos(data))
-      .catch(error => {
+      .catch(() => {
         setErrorMessage(ErrorMessage.UnableToLoad);
-        throw error;
       });
   }, []);
 
@@ -102,105 +97,15 @@ export const App: React.FC = () => {
           error={errorMessage}
           setErrorMessage={setErrorMessage}
           isInputDisablet={!!tempTodo}
-          isDeletedTodos={isLoadingTodos}
+          isDeletedTodos={loadingTodos}
         />
 
-        <section className="todoapp__main" data-cy="TodoList">
-          {filteredTodos.map(todo => (
-            <TodoItem
-              key={todo.id}
-              todo={todo}
-              onDeleteTodo={onDeleteTodo}
-              // isCompleted={completedTodosId.includes(todo.id)}
-              // setCompletedTodosId={setCompletedTodosId}
-              isLoading={isLoadingTodos.includes(todo.id)}
-            />
-          ))}
-          {tempTodo && (
-            <TodoItem
-              todo={tempTodo}
-              onDeleteTodo={() => {}}
-              // isCompleted={completedTodosId.includes(tempTodo.id)}
-              // setCompletedTodosId={setCompletedTodosId}
-              isLoading={isLoadingTodos.includes(tempTodo.id)}
-            />
-          )}
-
-          {/* This todo is an active todo */}
-          {/* <div data-cy="Todo" className="todo">
-            <label className="todo__status-label">
-              <input
-                data-cy="TodoStatus"
-                type="checkbox"
-                className="todo__status"
-              />
-            </label>
-
-            <span data-cy="TodoTitle" className="todo__title">
-              Not Completed Todo
-            </span>
-            <button type="button" className="todo__remove" data-cy="TodoDelete">
-              ×
-            </button>
-
-            <div data-cy="TodoLoader" className="modal overlay">
-              <div className="modal-background has-background-white-ter" />
-              <div className="loader" />
-            </div>
-          </div> */}
-
-          {/* This todo is being edited */}
-          {/* <div data-cy="Todo" className="todo">
-            <label className="todo__status-label">
-              <input
-                data-cy="TodoStatus"
-                type="checkbox"
-                className="todo__status"
-              />
-            </label> */}
-
-          {/* This form is shown instead of the title and remove button */}
-          {/* <form>
-              <input
-                data-cy="TodoTitleField"
-                type="text"
-                className="todo__title-field"
-                placeholder="Empty todo will be deleted"
-                value="Todo is being edited now"
-              />
-            </form>
-
-            <div data-cy="TodoLoader" className="modal overlay">
-              <div className="modal-background has-background-white-ter" />
-              <div className="loader" />
-            </div>
-          </div> */}
-
-          {/* This todo is in loadind state */}
-          {/* <div data-cy="Todo" className="todo">
-            <label className="todo__status-label">
-              <input
-                data-cy="TodoStatus"
-                type="checkbox"
-                className="todo__status"
-              />
-            </label>
-
-            <span data-cy="TodoTitle" className="todo__title">
-              Todo is being saved now
-            </span>
-
-            <button type="button" className="todo__remove" data-cy="TodoDelete">
-              ×
-            </button> */}
-
-          {/* 'is-active' class puts this modal on top of the todo */}
-          {/* <div data-cy="TodoLoader" className="modal overlay is-active">
-              <div className="modal-background has-background-white-ter" />
-              <div className="loader" />
-            </div>
-          </div> */}
-        </section>
+        <TodoList
+          filteredTodos={filteredTodos}
+          onDeleteTodo={onDeleteTodo}
+          loadingTodos={loadingTodos}
+          tempTodo={tempTodo}
+        />
 
         {!!todos.length && (
           <TodoFooter

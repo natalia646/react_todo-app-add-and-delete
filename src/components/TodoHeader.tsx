@@ -28,10 +28,10 @@ export const TodoHeader: React.FC<Props> = props => {
     }
   }, [inputRef, isInputDisablet, isDeletedTodos]);
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (error) {
+    if (error !== ErrorMessage.Default) {
       setErrorMessage(ErrorMessage.Default);
     }
 
@@ -41,11 +41,9 @@ export const TodoHeader: React.FC<Props> = props => {
       return;
     }
 
-    try {
-      await onAddTodo(title.trim());
-      setTitle('');
-    } finally {
-    }
+    return onAddTodo(title.trim())
+      .then(() => setTitle(''))
+      .catch(() => {});
   };
 
   return (
